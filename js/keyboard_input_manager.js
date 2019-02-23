@@ -167,6 +167,8 @@ KeyboardInputManager.prototype.changeOper = function (operIndex) {
 
 KeyboardInputManager.prototype.pressPPK = function (event) {
   event.preventDefault();
+  // TODO: not Now
+  this.emit('removeTile');
 }
 
 KeyboardInputManager.prototype.restart = function (event) {

@@ -74,7 +74,7 @@ GameManager.prototype.setup = function () {
     for (var key in Tile.nameSet) {
       var nameList = Tile.nameSet[key];
       for (var i in nameList) {
-        this.collection[nameList[i]] = false;
+        this.collection[nameList[i]] = 0;
       }
     }
 
@@ -98,7 +98,7 @@ GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
     var tile = Tile.getRandInitTile(this.grid.randomAvailableCell());
     
-    this.addCollection(tile.name);
+    this.addCollection(tile);
     this.grid.insertTile(tile);
   }
 };
@@ -117,13 +117,15 @@ GameManager.prototype.actuate = function () {
   }
 
   this.actuator.actuate(this.grid, {
+    collectScore: this.collectScore,
+    tileScore: this.tileScore,
     score:      this.score,
     over:       this.over,
     won:        this.won,
     bestScore:  this.storageManager.getBestScore(),
     terminated: this.isGameTerminated()
   });
-
+  this.actuator.renderCollection(this.collection);
 };
 
 // Represent the current game as an object
@@ -167,17 +169,34 @@ GameManager.prototype.changeOper = function (operIndex) {
   this.operIndex = operIndex;
 }
 
-GameManager.prototype.addCollection = function (name) {
-  this.collection[name] = true;
+GameManager.prototype.addCollection = function (tile) {
+  this.collection[tile.name] = tile.getScore();
   this.actuator.renderCollection(this.collection);
 }
 
 GameManager.prototype.removeTile = function (x, y) {
-  console.log(x, y);
+  // TODO: console.log(x, y);
+  console.log('clear game state');
+  this.storageManager.clearGameState();
+  this.restart();
 }
 
 GameManager.prototype.updateScore = function () {
-  
+  var collectScore = 0;
+  var tileScore = 0;
+  for (var k in this.collection) {
+    collectScore += this.collection[k];
+  }
+  this.grid.cells.forEach(function(row) {
+    row.forEach(function (tile) {
+      if (tile != null) {
+        tileScore += tile.getScore();
+      }
+    });
+  })
+  this.tileScore = tileScore;
+  this.collectScore = collectScore;
+  this.score = tileScore + collectScore;
 }
 
 // Move tiles on the grid in the specified direction
@@ -212,7 +231,7 @@ GameManager.prototype.move = function (direction) {
           var newValue = next.calcOper(tile, operation);
           var merged = Tile.getRandNewTile(positions.next, newValue);
           
-          self.addCollection(merged.name);
+          self.addCollection(merged);
           merged.mergedFrom = [tile, next];
 
           self.grid.insertTile(merged);
@@ -220,9 +239,6 @@ GameManager.prototype.move = function (direction) {
 
           // Converge the two tiles' positions
           tile.updatePosition(positions.next);
-
-          // TODO: Update the score
-          self.updateScore();
 
           // The mighty IWS-2000 tile
           if (merged.name === 'IWS 2000') self.won = true;
@@ -243,6 +259,8 @@ GameManager.prototype.move = function (direction) {
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
     }
+
+    self.updateScore();
 
     this.actuate();
   }

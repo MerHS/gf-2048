@@ -16,7 +16,7 @@ body {
   clear: both; }
 
 h1.title {
-  font-size: 80px;
+  font-size: 60px;
   font-weight: bold;
   margin: 0;
   display: block;
@@ -50,11 +50,11 @@ h1.title {
   float: right;
   text-align: right; }
 
-.score-container, .best-container, .board-score-container {
+.score-container, .best-container, .tile-score-container {
   position: relative;
   display: inline-block;
   background: #bbada0;
-  padding: 25px 25px;
+  padding: 25px 15px;
   font-size: 25px;
   height: 25px;
   line-height: 47px;
@@ -64,7 +64,7 @@ h1.title {
   margin-top: 8px;
   text-align: center; }
 
-  .score-container:after, .best-container:after, .board-score-container:after {
+  .score-container:after, .best-container:after, .tile-score-container:after {
     position: absolute;
     width: 100%;
     top: 10px;
@@ -75,7 +75,7 @@ h1.title {
     text-align: center;
     color: #eee4da; }
     
-  .score-container .score-addition, .best-container .score-addition, .board-score-container .score-addition {
+  .score-container .score-addition, .best-container .score-addition, .tile-score-container .score-addition {
     position: absolute;
     right: 30px;
     color: red;
@@ -91,11 +91,21 @@ h1.title {
     -moz-animation-fill-mode: both;
     animation-fill-mode: both; }
 
+.score-container {
+  width: 80px;
+}
+.tile-score-container {
+  width: 80px;
+}
+.best-container {
+  width: 80px;
+}
+
 .score-container:after {
   content: "Collect Score"; }
 
-.board-score-container:after {
-    content: "Board Score"; }
+.tile-score-container:after {
+    content: "Tile Score"; }
   
 
 .best-container:after {
@@ -521,6 +531,10 @@ hr {
 
 .buttons {
   margin: 10px 50px;
+}
+
+.above-game {
+  margin-top: 10px;
 }
 
 .above-game:after {

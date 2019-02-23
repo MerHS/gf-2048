@@ -1,10 +1,12 @@
 function HTMLActuator() {
   this.tileContainer    = document.querySelector(".tile-container");
-  this.scoreContainer   = document.querySelector(".score-container");
+  this.csContainer   = document.querySelector(".score-container");
+  this.tsContainer   = document.querySelector(".tile-score-container")
   this.bestContainer    = document.querySelector(".best-container");
   this.messageContainer = document.querySelector(".game-message");
 
-  this.score = 0;
+  this.cs = 0;
+  this.ts = 0;
 }
 
 HTMLActuator.prototype.actuate = function (grid, metadata) {
@@ -21,7 +23,7 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
       });
     });
 
-    self.updateScore(metadata.score);
+    self.updateScore(metadata);
     self.updateBestScore(metadata.bestScore);
 
     if (metadata.terminated) {
@@ -36,7 +38,17 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 };
 
 HTMLActuator.prototype.renderCollection = function (collection) {
-  console.log(collection);
+  var dollListP = document.getElementById('doll-list');
+  
+  var htmlBuild = []
+  for (var name in collection) {
+    if (collection[name]) {
+      htmlBuild.push('<strong>' + name + '</strong>');
+    } else {
+      htmlBuild.push(name);
+    }
+  }
+  dollListP.innerHTML = '<strong>Collected</strong>: ' + htmlBuild.join(', ');
 }
 
 // Continues the game (both restart and keep playing)
@@ -111,22 +123,40 @@ HTMLActuator.prototype.positionClass = function (position) {
   return "tile-position-" + position.x + "-" + position.y;
 };
 
-HTMLActuator.prototype.updateScore = function (score) {
-  this.clearContainer(this.scoreContainer);
+HTMLActuator.prototype.updateScoreContainer = function (container, difference, score) {
+  this.clearContainer(container);
+  container.textContent = score;
 
-  var difference = score - this.score;
-  this.score = score;
-
-  this.scoreContainer.textContent = this.score;
 
   if (difference > 0) {
     var addition = document.createElement("div");
     addition.classList.add("score-addition");
     addition.textContent = "+" + difference;
 
-    this.scoreContainer.appendChild(addition);
+    container.appendChild(addition);
+  } else if (difference < 0) {
+    var addition = document.createElement("div");
+    addition.classList.add("score-addition");
+    addition.textContent = difference;
+
+    container.appendChild(addition);
   }
+}
+
+HTMLActuator.prototype.updateScore = function (metadata) {
+  var cs = metadata.collectScore;
+  var csDiff = cs - this.cs;
+  this.cs = cs;
+  this.updateScoreContainer(this.csContainer, csDiff, cs);
+
+  var ts = metadata.tileScore;
+  var tsDiff = ts - this.ts;
+  this.ts = ts;
+  this.updateScoreContainer(this.tsContainer, tsDiff, ts);
+
+  this.updateBestScore(metadata.bestScore);
 };
+
 
 HTMLActuator.prototype.updateBestScore = function (bestScore) {
   this.bestContainer.textContent = bestScore;
