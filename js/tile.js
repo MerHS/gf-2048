@@ -139,9 +139,9 @@ Tile.getRandNewTile = function (cell, value) {
 
 Tile.prototype.getFileName = function () {
   if (this.value == '91/38') {
-    return 'Carcano M91-38.png';
+    return 'Carcano M91-38.jpg';
   }
-  return this.name + '.png';
+  return this.name + '.jpg';
 };
 
 Tile.prototype.savePosition = function () {
