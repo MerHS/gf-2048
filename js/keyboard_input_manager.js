@@ -46,7 +46,12 @@ KeyboardInputManager.prototype.listen = function () {
     87: 0, // W
     68: 1, // D
     83: 2, // S
-    65: 3  // A
+    65: 3, // A
+    49: 4, // 1
+    50: 5, // 2
+    51: 6, // 3
+    52: 7, // 4
+    53: 8  // 5
   };
 
   // Respond to direction keys
@@ -58,7 +63,13 @@ KeyboardInputManager.prototype.listen = function () {
     if (!modifiers) {
       if (mapped !== undefined) {
         event.preventDefault();
-        self.emit("move", mapped);
+        if (mapped < 4) {
+          self.emit("move", mapped);
+        } else if (mapped < 8) {
+          self.changeOper(mapped-4)
+        } else {
+          // TODO: SET PPK
+        }
       }
     }
 
@@ -72,6 +83,8 @@ KeyboardInputManager.prototype.listen = function () {
   this.bindButtonPress(".retry-button", this.restart);
   this.bindButtonPress(".restart-button", this.restart);
   this.bindButtonPress(".keep-playing-button", this.keepPlaying);
+  this.bindButtonPress("#ppk", this.pressPPK);
+  this.bindButtonPress(".operation", this.pressChangeOper);
 
   // Respond to swipe events
   var touchStartClientX, touchStartClientY;
@@ -127,6 +140,35 @@ KeyboardInputManager.prototype.listen = function () {
   });
 };
 
+KeyboardInputManager.prototype.pressChangeOper = function (event) {
+  event.preventDefault();
+  var id = event.target.id;
+  switch (id) {
+    case 'plus': this.changeOper(0); break;
+    case 'minus': this.changeOper(1); break;
+    case 'mult': this.changeOper(2); break;
+    case 'divide': this.changeOper(3); break;
+    default: break;
+  }
+}
+
+KeyboardInputManager.prototype.changeOper = function (operIndex) {
+  var operIds = ['#plus', '#minus', '#mult', '#divide'];
+  var button = document.querySelector(operIds[operIndex]);
+  var buttonAll = document.querySelectorAll('.operation');
+  
+  for (var i = 0; i < buttonAll.length; i++) {
+    buttonAll[i].classList.remove('current-op');
+  }
+  button.classList.add('current-op');
+
+  this.emit("changeOper", operIndex);
+}
+
+KeyboardInputManager.prototype.pressPPK = function (event) {
+  event.preventDefault();
+}
+
 KeyboardInputManager.prototype.restart = function (event) {
   event.preventDefault();
   this.emit("restart");
@@ -138,7 +180,10 @@ KeyboardInputManager.prototype.keepPlaying = function (event) {
 };
 
 KeyboardInputManager.prototype.bindButtonPress = function (selector, fn) {
-  var button = document.querySelector(selector);
-  button.addEventListener("click", fn.bind(this));
-  button.addEventListener(this.eventTouchend, fn.bind(this));
+  var buttons = document.querySelectorAll(selector);
+  for (var i = 0; i < buttons.length; i++) {
+    var button = buttons[i];
+    button.addEventListener("click", fn.bind(this));
+    button.addEventListener(this.eventTouchend, fn.bind(this));
+  }
 };

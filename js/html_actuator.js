@@ -35,6 +35,10 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
   });
 };
 
+HTMLActuator.prototype.renderCollection = function (collection) {
+  console.log(collection);
+}
+
 // Continues the game (both restart and keep playing)
 HTMLActuator.prototype.continueGame = function () {
   this.clearMessage();
@@ -56,7 +60,6 @@ HTMLActuator.prototype.addTile = function (tile) {
 
   // We can't use classlist because it somehow glitches when replacing classes
   var classes = ["tile", "tile-" + tile.value, positionClass];
-
   if (tile.value > 2048) classes.push("tile-super");
 
   this.applyClasses(wrapper, classes);
@@ -85,9 +88,14 @@ HTMLActuator.prototype.addTile = function (tile) {
 
   // Add the inner part of the tile to the wrapper
   wrapper.appendChild(inner);
+  this.setBackground(inner, tile.getFileName());
 
   // Put the tile on the board
   this.tileContainer.appendChild(wrapper);
+};
+
+HTMLActuator.prototype.setBackground = function (element, fileName) {
+  element.style.backgroundImage = "url('style/static/" + fileName + "')";
 };
 
 HTMLActuator.prototype.applyClasses = function (element, classes) {

@@ -6,9 +6,18 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
 
   this.startTiles     = 2;
 
+  this.operList = [
+    function (a, b) { return a + b; },
+    function (a, b) { return a - b; },
+    function (a, b) { return a * b; },
+    function (a, b) { return a / b; }
+  ]
+
   this.inputManager.on("move", this.move.bind(this));
   this.inputManager.on("restart", this.restart.bind(this));
   this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
+  this.inputManager.on("removeTile", this.removeTile.bind(this));
+  this.inputManager.on("changeOper", this.changeOper.bind(this));
 
   this.setup();
 }
@@ -43,12 +52,31 @@ GameManager.prototype.setup = function () {
     this.over        = previousState.over;
     this.won         = previousState.won;
     this.keepPlaying = previousState.keepPlaying;
+
+    this.turn = previousState.turn;
+    this.tileScore = previousState.tileScore;
+    this.collectScore = previousState.collectScore;
+    this.operIndex = previousState.operIndex;
+    this.collection = previousState.collection;
   } else {
     this.grid        = new Grid(this.size);
     this.score       = 0;
     this.over        = false;
     this.won         = false;
     this.keepPlaying = false;
+
+    this.turn = 0;
+    this.tileScore = 0;
+    this.collectScore = 0;
+    this.operIndex = 0;
+    this.collection = {};
+
+    for (var key in Tile.nameSet) {
+      var nameList = Tile.nameSet[key];
+      for (var i in nameList) {
+        this.collection[nameList[i]] = false;
+      }
+    }
 
     // Add the initial tiles
     this.addStartTiles();
@@ -68,9 +96,9 @@ GameManager.prototype.addStartTiles = function () {
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
-    var value = Math.random() < 0.9 ? 2 : 4;
-    var tile = new Tile(this.grid.randomAvailableCell(), value);
-
+    var tile = Tile.getRandInitTile(this.grid.randomAvailableCell());
+    
+    this.addCollection(tile.name);
     this.grid.insertTile(tile);
   }
 };
@@ -105,7 +133,12 @@ GameManager.prototype.serialize = function () {
     score:       this.score,
     over:        this.over,
     won:         this.won,
-    keepPlaying: this.keepPlaying
+    keepPlaying: this.keepPlaying,
+    turn: this.turn,
+    tileScore: this.tileScore,
+    collectScore: this.collectScore,
+    operIndex: this.operIndex,
+    collection: this.collection
   };
 };
 
@@ -126,6 +159,27 @@ GameManager.prototype.moveTile = function (tile, cell) {
   tile.updatePosition(cell);
 };
 
+GameManager.prototype.getOper = function () {
+  return this.operList[this.operIndex];
+}
+
+GameManager.prototype.changeOper = function (operIndex) {
+  this.operIndex = operIndex;
+}
+
+GameManager.prototype.addCollection = function (name) {
+  this.collection[name] = true;
+  this.actuator.renderCollection(this.collection);
+}
+
+GameManager.prototype.removeTile = function (x, y) {
+  console.log(x, y);
+}
+
+GameManager.prototype.updateScore = function () {
+  
+}
+
 // Move tiles on the grid in the specified direction
 GameManager.prototype.move = function (direction) {
   // 0: up, 1: right, 2: down, 3: left
@@ -138,6 +192,7 @@ GameManager.prototype.move = function (direction) {
   var vector     = this.getVector(direction);
   var traversals = this.buildTraversals(vector);
   var moved      = false;
+  var operation = self.getOper();
 
   // Save the current tile positions and remove merger information
   this.prepareTiles();
@@ -153,8 +208,11 @@ GameManager.prototype.move = function (direction) {
         var next      = self.grid.cellContent(positions.next);
 
         // Only one merger per row traversal?
-        if (next && next.value === tile.value && !next.mergedFrom) {
-          var merged = new Tile(positions.next, tile.value * 2);
+        if (next && next.mergeable(tile, operation) && !next.mergedFrom) {
+          var newValue = next.calcOper(tile, operation);
+          var merged = Tile.getRandNewTile(positions.next, newValue);
+          
+          self.addCollection(merged.name);
           merged.mergedFrom = [tile, next];
 
           self.grid.insertTile(merged);
@@ -163,11 +221,11 @@ GameManager.prototype.move = function (direction) {
           // Converge the two tiles' positions
           tile.updatePosition(positions.next);
 
-          // Update the score
-          self.score += merged.value;
+          // TODO: Update the score
+          self.updateScore();
 
-          // The mighty 2048 tile
-          if (merged.value === 2048) self.won = true;
+          // The mighty IWS-2000 tile
+          if (merged.name === 'IWS 2000') self.won = true;
         } else {
           self.moveTile(tile, positions.farthest);
         }
@@ -256,8 +314,11 @@ GameManager.prototype.tileMatchesAvailable = function () {
 
           var other  = self.grid.cellContent(cell);
 
-          if (other && other.value === tile.value) {
-            return true; // These two tiles can be merged
+          if (other) {
+            for (var i = 0; i < 4; i++) {
+              if (other.mergeable(tile, self.operList[i]))
+                return true;
+            }
           }
         }
       }
