@@ -9,6 +9,7 @@ function Tile(position, value, name) {
 }
 
 Tile.nameSet = {
+  '-31': ['Suomi'],
   '-2': ['Five-seveN'],
   '1': ['M1 Garand', 'M1A1', 'SPP-1', 'PSG-1', 'F1', 'Gepard M1', 'SM-1'],
   '2': ['Sten MkII', 'M2HB', 'Welrod MkII', 'K2'],
@@ -167,6 +168,8 @@ Tile.prototype.serialize = function () {
 Tile.prototype.getScore = function () {
   if (this.value == '91/38') {
     return 9138;
+  } else if (this.value == '-31') {
+    return 31;
   } else if (this.value == '-2') {
     return 57;
   } else {
